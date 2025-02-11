@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtual Closet Chatbot</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .chatbot-container {
+            position: fixed;
+            right: 20px;
+            bottom: 20px;
+            width: 350px;
+            height: 500px;
+            border-radius: 8px;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            background: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            border: 1px solid #ccc;
+        }
+        .chat-header {
+            background: #007bff;
+            color: white;
+            padding: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+        }
+        .close-btn {
+            cursor: pointer;
+            font-size: 18px;
+        }
+        .chat-window {
+            flex-grow: 1;
+            padding: 10px;
+            overflow-y: auto;
+            background: #f8f8f8;
+        }
+        .chat-input {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border-top: 1px solid #ccc;
+            background: white;
+        }
+        .chat-input input {
+            flex-grow: 1;
+            padding: 8px;
+            border: none;
+            outline: none;
+            font-size: 14px;
+        }
+        .chat-input button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+            color: gray;
+        }
+        .message {
+            margin: 5px 0;
+            padding: 8px;
+            border-radius: 5px;
+            max-width: 80%;
+        }
+        .user-message {
+            background: #d1e7fd;
+            align-self: flex-end;
+        }
+        .bot-message {
+            background: #f1f1f1;
+            align-self: flex-start;
+        }
+
+        /* Chatbot Floating Icon */
+        .chatbot-icon {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #007bff;
+            color: white;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 24px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Chatbot Floating Icon -->
+    <div class="chatbot-icon" onclick="toggleChatbot()">💬</div>
+
+    <div class="chatbot-container" id="chatbot">
+        <div class="chat-header">
+            Virtual Closet Chatbot
+            <span class="close-btn" onclick="closeChatbot()">❌</span>
+        </div>
+        <div class="chat-window" id="chat-window"></div>
+        <div class="chat-input">
+            <input type="text" id="user-input" placeholder="Ask about your Virtual Closet...">
+            <button onclick="sendMessage()">Send</button>
+            <button onclick="startListening()">🎤</button>
+        </div>
+    </div>
+
+    <script>
+        const responses = [
+{ keywords: ["hi"], response: "Hello! Welcome to ChicCabinet, your virtual closet. How can I help?" },
+            { keywords: ["virtual closet"], response: "ChicCabinet is a digital wardrobe where you can organize and plan outfits." },
+            { keywords: ["casual wear"], response: "Casual wear includes T-shirts, jeans, shorts, and hoodies for everyday comfort." },
+            { keywords: ["formal wear"], response: "Formal wear includes suits, dress shirts, ties, blazers, and dresses for special occasions." },
+            { keywords: ["sportswear"], response: "Sportswear includes leggings, tracksuits, sneakers, and tank tops for workouts." },
+            { keywords: ["outerwear"], response: "Outerwear includes trench coats, blazers, cardigans, wool coats, puffer jackets, and longline sweaters." },
+            { keywords: ["v-neck tops"], response: "Check out these V-neck tops: <a href='https://www.nykaa.com/cider-v-neck-gingham-knotted-sleeveless-blousetop/p/17251917'>Sleeveless Blouse</a>, <a href='https://littleboxindia.com/products/mesh-v-neck-ruffle-bell-sleeve-blue-top'>Ruffle Bell Sleeve</a>." },
+            { keywords: ["wrap dresses"], response: "Wrap dresses available: <a href='https://www.nykaa.com/cider-green-satin-wrap-knotted-maxi-dress/p/17210101'>Satin Wrap Dress</a>, <a href='https://littleboxindia.com/products/ruffle-wrap-v-neck-short-sleeve-tie-knot-short-dress-in-maroon'>Maroon Wrap Dress</a>." },
+            { keywords: ["flared jeans"], response: "Flared jeans selection: <a href='https://www.nykaa.com/cider-denim-high-waist-button-flared-jeans/p/12659738'>High Waist Flared</a>, <a href='https://www.nykaa.com/cider-denim-low-rise-solid-pocket-cargo-flared-jeans/p/16049791'>Cargo Flared Jeans</a>." },
+            { keywords: ["statement earrings"], response: "Check out statement earrings: <a href='https://www.nykaafashion.com/jewels-galaxy-gold-plated-contemporary-drop-and-hoop-earrings-set-of-5/p/8964882'>Gold Hoop Earrings</a>, <a href='https://www.nykaafashion.com/anton-heunis-tear-drop-earrings/p/12494617'>Teardrop Earrings</a>." },
+            { keywords: ["coats with belts"], response: "Stylish coats with belts: <a href='https://littleboxindia.com/products/tailored-belted-long-sleeve-blazer-in-coco-brown'>Belted Blazer</a>, <a href='https://littleboxindia.com/products/corduroy-double-breasted-jacket-with-belt-in-black'>Corduroy Coat</a>." }
+     
+                   ];
+
+        function sendMessage() {
+            let inputField = document.getElementById("user-input");
+            let message = inputField.value.trim().toLowerCase();
+            
+            if (message) {
+                displayMessage("You: " + message, "user-message");
+                let response = responses.find(entry => entry.keywords.some(keyword => message.includes(keyword)));
+                
+                if (response) {
+                    setTimeout(() => displayMessage("Bot: " + response.response, "bot-message"), 500);
+                } else {
+                    setTimeout(() => displayMessage("Bot: Sorry, I don't understand. Try asking about clothing categories or body type recommendations!", "bot-message"), 500);
+                }
+                
+                inputField.value = "";
+            }
+        }
+
+        function displayMessage(text, className) {
+            let chatWindow = document.getElementById("chat-window");
+            let messageDiv = document.createElement("div");
+            messageDiv.innerHTML = text;
+            messageDiv.className = "message " + className;
+            chatWindow.appendChild(messageDiv);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        document.getElementById("user-input").addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                sendMessage();
+            }
+        });
+        
+        function startListening() {
+            let recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            recognition.lang = "en-US";
+            
+            recognition.onresult = function(event) {
+                let transcript = event.results[0][0].transcript;
+                document.getElementById("user-input").value = transcript;
+                sendMessage();
+            };
+            
+            recognition.start();
+        }
+
+        function toggleChatbot() {
+            let chatbot = document.getElementById("chatbot");
+            chatbot.style.display = chatbot.style.display === "flex" ? "none" : "flex";
+        }
+        
+        function closeChatbot() {
+            document.getElementById("chatbot").style.display = "none";
+        }
+    </script>
+
+</body>
+</html>
